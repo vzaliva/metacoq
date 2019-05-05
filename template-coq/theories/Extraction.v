@@ -6,6 +6,7 @@
 
 (* From Template Require All. *)
 Require Template.Ast.
+Require Template.kernel.univ.
 Require Import Template.utils.
 Require Import FSets.
 Require Import ExtrOcamlBasic.
@@ -25,6 +26,15 @@ Extract Constant utils.ascii_compare =>
 Extract Inductive BasicAst.cast_kind => "Constr.cast_kind"
   [ "Constr.VMcast" "Constr.NATIVEcast"
     "Constr.DEFAULTcast" "Constr.REVERTcast" ].
+
+Extract Inductive univ.ConstraintType.t => "Univ.constraint_type"
+  [ "Univ.Lt" "Univ.Le" "Univ.Eq" ].
+
+Extract Inductive univ.Variance.t => "Univ.Variance.t"
+  [ "Univ.Variance.Irrelevant" "Univ.Variance.Covariant" "Univ.Variance.Invariant" ].
+
+Extract Inductive BasicAst.sort_family => "Sorts.family"
+  [ "Sorts.InProp" "Sorts.InSet" "Sorts.InType" ].
 
 Extraction Blacklist config uGraph univ Ast String List Nat Int
            UnivSubst Typing Checker Retyping OrderedType Logic Common.

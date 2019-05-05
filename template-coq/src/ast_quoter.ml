@@ -21,8 +21,8 @@ struct
   type quoted_proj = projection
   type quoted_global_reference = global_reference
 
-  type quoted_sort_family = sort_family
-  type quoted_constraint_type = Univ0.constraint_type
+  type quoted_sort_family = Sorts.family
+  type quoted_constraint_type = Univ.constraint_type
   type quoted_univ_constraint = Univ0.univ_constraint
   type quoted_univ_instance = Univ0.Instance.t
   type quoted_univ_constraints = Univ0.constraints
@@ -82,11 +82,7 @@ struct
   let quote_sort s =
     quote_universe (Sorts.univ_of_sort s)
 
-  let quote_sort_family s =
-    match s with
-    | Sorts.InProp -> BasicAst.InProp
-    | Sorts.InSet -> BasicAst.InSet
-    | Sorts.InType -> BasicAst.InType
+  let quote_sort_family (s : quoted_sort_family) : Sorts.family = s
 
   let quote_cast_kind (x : Constr.cast_kind) : quoted_cast_kind = x
 
@@ -94,10 +90,7 @@ struct
   let quote_inductive (kn, i) = { inductive_mind = kn ; inductive_ind = i }
   let quote_proj ind p a = ((ind,p),a)
 
-  let quote_constraint_type = function
-    | Univ.Lt -> Univ0.ConstraintType.Lt
-    | Univ.Le -> Univ0.ConstraintType.Le
-    | Univ.Eq -> Univ0.ConstraintType.Eq
+  let quote_constraint_type (x : quoted_constraint_type) : Univ.constraint_type = x
 
   let quote_univ_constraint ((l, ct, l') : Univ.univ_constraint) : quoted_univ_constraint =
     ((quote_level l, quote_constraint_type ct), quote_level l')
@@ -110,11 +103,7 @@ struct
     let l = List.map quote_univ_constraint (Univ.Constraint.elements c) in
     Univ0.ConstraintSet.(List.fold_right add l empty)
 
-  let quote_variance (v : Univ.Variance.t) =
-    match v with
-    | Univ.Variance.Irrelevant -> Univ0.Variance.Irrelevant
-    | Univ.Variance.Covariant -> Univ0.Variance.Covariant
-    | Univ.Variance.Invariant -> Univ0.Variance.Invariant
+  let quote_variance (v : Univ.Variance.t) = v
 
   let quote_cuminfo_variance (var : Univ.Variance.t array) =
     CArray.map_to_list quote_variance var

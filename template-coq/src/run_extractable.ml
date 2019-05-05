@@ -134,7 +134,7 @@ let of_mib (env : Environ.env) (t : Names.MutInd.t) (mib : Plugin_core.mutual_in
   let bodies = List.map Ast_quoter.mk_one_inductive_body (List.rev ls) in
   Ast_quoter.mk_mutual_inductive_body nparams paramsctx bodies uctx
 
-let to_mie (x : Ast0.mutual_inductive_entry) : Plugin_core.mutual_inductive_entry =
+let to_mutual_inductive_entry evm (x : Ast0.mutual_inductive_entry) : Plugin_core.mutual_inductive_entry =
   let unquote_ident = Ast_denoter.ExtractionDenoter.unquote_ident in
   let open Entries in
   { mind_entry_record =
@@ -147,34 +147,57 @@ let to_mie (x : Ast0.mutual_inductive_entry) : Plugin_core.mutual_inductive_entr
   ; mind_entry_finite = x.Ast0.mind_entry_finite
   ; mind_entry_params =
       begin
-      let f (id, le) =
-        (unquote_ident id,
-         match le with
-         | Ast0.LocalDef x -> Entries.LocalDefEntry (to_constr x)
-         | Ast0.LocalAssum x -> Entries.LocalAssumEntry (to_constr x)) in
-      List.map f x.Ast0.mind_entry_params
+        let f (id, le) =
+          (unquote_ident id,
+           match le with
+           | Ast0.LocalDef x -> Entries.LocalDefEntry (to_constr x)
+           | Ast0.LocalAssum x -> Entries.LocalAssumEntry (to_constr x)) in
+        List.map f x.Ast0.mind_entry_params
       end
   ; mind_entry_inds =
       begin
-      let f x =
-        { mind_entry_typename = unquote_ident x.Ast0.mind_entry_typename
-        ; mind_entry_arity = to_constr x.Ast0.mind_entry_arity
-        ; mind_entry_template = x.Ast0.mind_entry_template
-        ; mind_entry_consnames = List.map unquote_ident x.Ast0.mind_entry_consnames
-        ; mind_entry_lc = List.map to_constr x.Ast0.mind_entry_lc
-        } in
-      List.map f x.Ast0.mind_entry_inds
+        let unquote_one_inductive_entry x =
+          { mind_entry_typename = unquote_ident x.Ast0.mind_entry_typename
+          ; mind_entry_arity = to_constr x.Ast0.mind_entry_arity
+          ; mind_entry_template = x.Ast0.mind_entry_template
+          ; mind_entry_consnames = List.map unquote_ident x.Ast0.mind_entry_consnames
+          ; mind_entry_lc = List.map to_constr x.Ast0.mind_entry_lc
+          } in
+        List.map unquote_one_inductive_entry x.Ast0.mind_entry_inds
       end
   ; mind_entry_universes =
       begin
-        let f (ls, cs) = failwith "not implemented" in
+        let unquote_level l = Ast_quoter.unquote_level l in
+        let unquote_univ_constraint (z : Univ0.ConstraintSet.Raw.elt) =
+          let ((l1, c), l2) = z in
+          (unquote_level l1, c, unquote_level l2)
+        in
+        let unquote_constraints (c : Univ0.constraints) : Univ.Constraint.t =
+          let f set c =
+            let c = unquote_univ_constraint c in Univ.Constraint.add c set
+          in
+          List.fold_left f Univ.Constraint.empty c
+        in
+        let unquote_universe_instance (ls : Univ0.Instance.t) : Univ.Instance.t =
+          let l = List.map unquote_level ls in
+          Univ.Instance.of_array (Array.of_list l)
+        in
+        let denote_ucontext ((ls,cs) : Univ0.Instance.t * Univ0.constraints) : Univ.UContext.t =
+          Univ.UContext.make (unquote_universe_instance ls, unquote_constraints cs) in
+        let denote_cumulativity (ci : Univ0.CumulativityInfo.t) : Univ.CumulativityInfo.t =
+          let ctx,var = ci in
+          Univ.CumulativityInfo.make (denote_ucontext ctx, Array.of_list var)
+        in
+        let denote_context_set (ctx : Univ0.UContext.t) : Univ.ContextSet.t =
+          Univ.ContextSet.of_context (denote_ucontext ctx)
+        in
         match x.Ast0.mind_entry_universes with
         | Univ0.Monomorphic_ctx ctx ->
-           Entries.Monomorphic_ind_entry (f ctx)
+           Entries.Monomorphic_ind_entry (denote_context_set ctx)
         | Univ0.Polymorphic_ctx ctx ->
-           Entries.Polymorphic_ind_entry (f ctx)
+           Entries.Polymorphic_ind_entry (denote_ucontext ctx)
         | Univ0.Cumulative_ctx ctx ->
-           Entries.Cumulative_ind_entry (f ctx)
+           Entries.Cumulative_ind_entry (denote_cumulativity ctx)
       end
   ; mind_entry_private = x.Ast0.mind_entry_private
   }
@@ -210,6 +233,9 @@ let tmOfMib (ti : Names.MutInd.t) (t : Plugin_core.mutual_inductive_body) : Ast0
 
 let tmOfConstantEntry (t : Plugin_core.constant_entry) : Ast0.constant_entry tm =
   Plugin_core.with_env_evm (fun env _ -> tmReturn (of_constant_entry env t))
+
+let tmToMie x =
+  Plugin_core.with_env_evm (fun env _ -> tmReturn (to_mutual_inductive_entry env x))
 
 (*
 let dbg = function
@@ -280,7 +306,8 @@ let rec interp_tm (t : 'a coq_TM) : 'a tm =
     tmBind (tmQuoteConstant (to_kername kn) b)
            (fun x -> Obj.magic (tmOfConstantEntry x))
   | Coq_tmInductive i ->
-    tmMap (fun _ -> Obj.magic ()) (tmInductive (to_mie i))
+     tmBind (tmToMie i)
+       (fun x -> tmMap (fun _ -> Obj.magic ()) (tmInductive x))
   | Coq_tmExistingInstance k ->
     Obj.magic (tmExistingInstance (to_kername k))
   | Coq_tmInferInstance t ->
