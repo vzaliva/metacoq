@@ -33,7 +33,7 @@ struct
   type quoted_ind_entry = quoted_ident * t * quoted_bool * quoted_ident list * t list
   type quoted_definition_entry = t * t option * quoted_univ_context
   type quoted_mind_entry = mutual_inductive_entry
-  type quoted_mind_finiteness = recursivity_kind
+  type quoted_mind_finiteness = Declarations.recursivity_kind
   type quoted_entry = (constant_entry, quoted_mind_entry) sum option
 
   type quoted_context_decl = context_decl
@@ -88,11 +88,7 @@ struct
     | Sorts.InSet -> BasicAst.InSet
     | Sorts.InType -> BasicAst.InType
 
-  let quote_cast_kind = function
-    | DEFAULTcast -> Cast
-    | REVERTcast -> RevertCast
-    | NATIVEcast -> NativeCast
-    | VMcast -> VmCast
+  let quote_cast_kind (x : Constr.cast_kind) : quoted_cast_kind = x
 
   let quote_kn kn = string_to_list (KerName.to_string kn)
   let quote_inductive (kn, i) = { inductive_mind = kn ; inductive_ind = i }
@@ -230,10 +226,7 @@ struct
 
   let mk_program decls tm = (decls, tm)
 
-  let quote_mind_finiteness = function
-    | Declarations.Finite -> Finite
-    | Declarations.CoFinite -> CoFinite
-    | Declarations.BiFinite -> BiFinite
+  let quote_mind_finiteness (x : Declarations.recursivity_kind) : quoted_mind_finiteness = x
 
   let quote_mind_params l =
     let map (id, body) =
@@ -301,12 +294,7 @@ struct
 
   (* val unquote_sort : quoted_sort -> Sorts.t *)
   (* val unquote_sort_family : quoted_sort_family -> Sorts.family *)
-  let unquote_cast_kind (q : quoted_cast_kind) : Constr.cast_kind =
-    match q with
-    | VmCast -> VMcast
-    | NativeCast -> NATIVEcast
-    | Cast -> DEFAULTcast
-    | RevertCast -> REVERTcast
+  let unquote_cast_kind (q : quoted_cast_kind) : Constr.cast_kind = q
 
   let unquote_kn (q: quoted_kernel_name) : Libnames.qualid =
     let s = list_to_string q in

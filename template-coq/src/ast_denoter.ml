@@ -32,7 +32,7 @@ struct
   type quoted_ind_entry = quoted_ident * t * quoted_bool * quoted_ident list * t list
   type quoted_definition_entry = t * t option * quoted_univ_context
   type quoted_mind_entry = mutual_inductive_entry
-  type quoted_mind_finiteness = recursivity_kind
+  type quoted_mind_finiteness = Declarations.recursivity_kind
   type quoted_entry = (constant_entry, quoted_mind_entry) sum option
 
   type quoted_context_decl = context_decl

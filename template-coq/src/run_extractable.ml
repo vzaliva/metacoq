@@ -9,6 +9,15 @@ open Ast_quoter
 let of_constr (env : Environ.env) (t : Constr.t) : Ast0.term =
   Ast_quoter.quote_term env t
 
+open Ast_denoter
+  (* todo(gmm): determine what of these already exist. *)
+let rec to_constr_ev (evm : Evd.evar_map) (t : Ast0.term) : Evd.evar_map * Constr.t =
+  ExtractionDenote.denote_term evm t
+
+let to_constr (t : Ast0.term) : Constr.t =
+  snd (to_constr_ev Evd.empty t)
+
+
 let to_string : char list -> string =
   Quoted.list_to_string
 
@@ -126,7 +135,49 @@ let of_mib (env : Environ.env) (t : Names.MutInd.t) (mib : Plugin_core.mutual_in
   Ast_quoter.mk_mutual_inductive_body nparams paramsctx bodies uctx
 
 let to_mie (x : Ast0.mutual_inductive_entry) : Plugin_core.mutual_inductive_entry =
-  failwith "to_mie"
+  let unquote_ident = Ast_denoter.ExtractionDenoter.unquote_ident in
+  let open Entries in
+  { mind_entry_record =
+      begin
+        match x.Ast0.mind_entry_record with
+        | None -> None
+        | Some None -> Some None
+        | Some (Some i) -> Some (Some (unquote_ident i))
+      end
+  ; mind_entry_finite = x.Ast0.mind_entry_finite
+  ; mind_entry_params =
+      begin
+      let f (id, le) =
+        (unquote_ident id,
+         match le with
+         | Ast0.LocalDef x -> Entries.LocalDefEntry (to_constr x)
+         | Ast0.LocalAssum x -> Entries.LocalAssumEntry (to_constr x)) in
+      List.map f x.Ast0.mind_entry_params
+      end
+  ; mind_entry_inds =
+      begin
+      let f x =
+        { mind_entry_typename = unquote_ident x.Ast0.mind_entry_typename
+        ; mind_entry_arity = to_constr x.Ast0.mind_entry_arity
+        ; mind_entry_template = x.Ast0.mind_entry_template
+        ; mind_entry_consnames = List.map unquote_ident x.Ast0.mind_entry_consnames
+        ; mind_entry_lc = List.map to_constr x.Ast0.mind_entry_lc
+        } in
+      List.map f x.Ast0.mind_entry_inds
+      end
+  ; mind_entry_universes =
+      begin
+        let f (ls, cs) = failwith "not implemented" in
+        match x.Ast0.mind_entry_universes with
+        | Univ0.Monomorphic_ctx ctx ->
+           Entries.Monomorphic_ind_entry (f ctx)
+        | Univ0.Polymorphic_ctx ctx ->
+           Entries.Polymorphic_ind_entry (f ctx)
+        | Univ0.Cumulative_ctx ctx ->
+           Entries.Cumulative_ind_entry (f ctx)
+      end
+  ; mind_entry_private = x.Ast0.mind_entry_private
+  }
 
 (* note(gmm): code taken from quoter.ml (quote_entry_aux) *)
 let of_constant_entry (env : Environ.env) (cd : Plugin_core.constant_entry) : Ast0.constant_entry =
@@ -148,20 +199,8 @@ let of_constant_entry (env : Environ.env) (cd : Plugin_core.constant_entry) : As
 let of_nat (t : Datatypes.nat) : int =
   failwith "of_constr"
 
-let of_cast_kind (ck: BasicAst.cast_kind) : Constr.cast_kind =
-  match ck with
-  | VmCast -> Constr.VMcast
-  | NativeCast -> Constr.VMcast
-  | Cast -> Constr.DEFAULTcast
-  | RevertCast -> Constr.REVERTcast
+let of_cast_kind (ck: quoted_cast_kind) : Constr.cast_kind = ck
 
-open Ast_denoter
-  (* todo(gmm): determine what of these already exist. *)
-let rec to_constr_ev (evm : Evd.evar_map) (t : Ast0.term) : Evd.evar_map * Constr.t =
-  ExtractionDenote.denote_term evm t
-
-let to_constr (t : Ast0.term) : Constr.t =
-  snd (to_constr_ev Evd.empty t)
 
 let tmOfConstr (t : Constr.t) : Ast0.term tm =
   Plugin_core.with_env_evm (fun env _ -> tmReturn (of_constr env t))
