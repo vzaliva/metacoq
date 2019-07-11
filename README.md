@@ -1,21 +1,12 @@
-MetaCoq
+Coq Coq Correct: Verification of Type Checking and Erasure for Coq, in Coq
 =======
 
-<img src="https://github.com/MetaCoq/metacoq/raw/master/docs/assets/LOGO.png" alt="MetaCoq" width="50px"/>
+This directory contains the anonymised supplementary material for the paper "Coq Coq Correct: Verification of Type Checking and Erasure for Coq, in Coq".
 
-[![Build Status](https://travis-ci.org/MetaCoq/metacoq.svg?branch=coq-8.8)](https://travis-ci.org/MetaCoq/metacoq)
-[![Gitter](https://img.shields.io/gitter/room/nwjs/nw.js.svg)](https://gitter.im/coq/Template-Coq)
+There are several subdirectories:
 
-MetaCoq is a project formalizing Coq in Coq and providing tools for
-manipulating Coq terms and developing certified plugins
-(i.e. translations, compilers or tactics) in Coq.
-
-At the center of this project is the Template-Coq quoting library for
-Coq. The project currently has a single repository extending
-Template-Coq with additional features:
-
-Template-Coq
-------------
+Template-Coq (`template-coq`)
+------------ 
 
 Template-Coq is a quoting library for [Coq](http://coq.inria.fr). It
 takes `Coq` terms and constructs a representation of their syntax tree as
@@ -33,15 +24,10 @@ In addition to this representation of terms, Template Coq includes:
   checker, and inserting them in the global environment, in
   the stype of MTac.
   
-Checker
--------
+Template-Coq was originally developed by
+[Gregory Malecha](https://github.com/gmalecha).
   
-- A partial type-checker for the Calculus of Inductive Constructions,
-  whose extraction to ML is runable as a plugin (using command `MetaCoq
-  Check foo`). This checker uses _fuel_, so it must be passed a number
-  of maximal reduction steps to perfom when calling conversion.
-
-PCUIC
+PCUIC, Coq's Core Calculus (`pcuic`)
 -----
 
 PCUIC, the Polymorphic Cumulative Calculus of Inductive Constructions is
@@ -56,93 +42,23 @@ calculus has (partial) proofs of standard metatheoretical results:
 
 - Subject Reduction
 
-Extraction
+Contains the formalisation corresponding to section 2 of the paper.
+There are some assumptions and admitted lemmas concerning the meta-theory of PCUIC, which are listed in the file `PCUICAdmittedLemmata.v`
+  
+A verified checker for PCUIC (`safechecker`)
+-------
+  
+Contains the implementation of a correct conversion algorithm and type checker, described in section 3 of the paper.
+The directory does not contain admits or axioms.
+
+Type and proof erasure for PCUIC (`extraction`)
 ----------
 
-- An extraction procedure to untyped lambda-calculus accomplishing the
-  same as the Extraction plugin of Coq.
+Contains the implementation of a correct type and proof erasure procedure, described in section 4 of the paper.
+The directory does not contain admits or axioms.
 
-Translations
-------------
-
-- Example of plugin built on top of this.
-
-Branches
-========
-
-The [coq-8.8](https://github.com/MetaCoq/metacoq/tree/coq-8.8) branch is the active development branch. If possible, it's strongly recommended to use this branch.
-
-The branches [coq-8.6](https://github.com/MetaCoq/metacoq/tree/coq-8.6),
-[coq-8.7](https://github.com/MetaCoq/metacoq/tree/coq-8.7) are frozen.
-[coq-8.9](https://github.com/MetaCoq/metacoq/tree/coq-8.9) is also available.
-
-The branch [master](https://github.com/MetaCoq/metacoq/tree/master) tracks the current Coq `master` branch.
-
-
-Documentation
-=============
-
-You may want to start by a demo: [demo.v](https://github.com/MetaCoq/metacoq/tree/coq-8.8/test-suite/demo.v)
-
-The 8.8 branch [documentation (coqdoc files)](html/Template.All.html)
-and pretty-printed HTML versions of the [translations](html/translations) are available.
-
-ident vs. qualid. vs kername
----------------------------
-
-MetaCoq uses three types convertible to `string` which have a different intended meaning:
-
-- `ident` is the type of identifiers, they should not contains any dot.
-  E.g. `nat`
-
-- `qualid` is the type of partially qualified names.
-  E.g. `Datatypes.nat`
-
-- `kername` is the type of fully qualified names.
-  E.g. `Coq.Init.Datatypes.nat`
-
-Quoting always produce fully qualified names. On the converse, unquoting allow to
-have only partially qualified names and rely on Coq to resolve them. The commands
-of the TemplateMonad also allow partially qualified names.
-
-Options
--------
-
-`Set / Unset Strict Unquote Universe Mode`. When this mode is on,
-the unquoting of a universe level fails if this level does not exists.
-Otherwise the level is added to the current context. It is on by default.
-
-There is also an "opaque" universe `fresh_universe` which is unquoted to
-a fresh level when `Strict Unquote Universe Mode` is off.
-
-Examples of plugins
--------------------
-
-- a plugin to add a constructor in [test-suite/add_constructor.v](https://github.com/MetaCoq/metacoq/tree/coq-8.8/test-suite/add_constructor.v)
-- a parametricity plugin in [translations/param_original.v](https://github.com/MetaCoq/metacoq/tree/coq-8.8/translations/param_original.v)
-- a plugin to negate funext in [translations/times_bool_fun.v](https://github.com/MetaCoq/metacoq/tree/coq-8.8/translations/times_bool_fun.v)
-
-Credits
-=======
-
-Template-Coq was originally developed by
-[Gregory Malecha](https://github.com/gmalecha).
-
-This software is distributed under the terms of the MIT license.
-
-Installation instructions
+Compilation instructions
 =========================
-
-Install from GitHub repository
-------------------------------
-
-To get the source code:
-
-    # git clone https://github.com/MetaCoq/metacoq.git
-    # git checkout -b coq-8.8 origin/coq-8.8
-    # git status
-    
-Check that you are indeed on the `coq-8.8` branch.
 
 Requirements
 ------------
@@ -150,7 +66,7 @@ Requirements
 To compile the library, you need:
 
 - `Coq 8.8.2` (older versions of `8.8` might also work)
-- `OCaml` (tested with `4.04.1`, beware that `OCaml 4.06.0` can 
+- `OCaml` (tested with `4.06.1`, beware that `OCaml 4.06.0` can 
   produce linking errors on some platforms)
 - [`Equations 1.2`](http://mattam82.github.io/Coq-Equations/)
 
@@ -162,18 +78,18 @@ The easiest way to get all packages is through [opam](http://opam.ocaml.org):
 You might want to create a "switch" (an environment of `opam` packages) for `Coq` if
 you don't have one yet. You need to use **opam 2** to obtain the right version of `Equations`.
 
-    # opam switch create coq.8.8.2 4.04.1 
+    # opam switch create coq.8.8.2 4.06.1 
     # eval $(opam env)
     
 This creates the `coq.8.8.2` switch which initially contains only the
-basic `OCaml` `4.04.1` compiler, and puts you in the right environment
+basic `OCaml` `4.06.1` compiler, and puts you in the right environment
 (check with `ocamlc -v`).
 
 You can also create a [local
 switch](https://opam.ocaml.org/blog/opam-20-tips/#Local-switches) for
 developing using:
 
-    # opam switch create . 4.04.1
+    # opam switch create . 4.06.1
 
 Once in the right switch, you can install `Coq` and the `Equations` package using:
     
@@ -184,90 +100,15 @@ Pinning the packages prevents `opam` from trying to upgrade it afterwards, in
 this switch. If the commands are successful you should have `coq`
 available (check with `coqc -v`).
 
-You can test the installation of the packages locally using `opam install .`
-at the root directory.
-
 Compile
 -------
 
 Once in the right environment, Use:
 
-- `make` to compile the `template-coq` plugin, the `checker`, the `pcuic`
-  development and the `extraction` plugin. You can also selectively build
+- `./configure.sh local` to prepate compilation
+
+- `make` to compile the `template-coq` plugin, the `safechecker`, the `pcuic`
+  development and the `extraction` development. You can also selectively build
   each target.
 
-- `make translations` to compile the translation plugins
-
-- `make test-suite` to compile the test suite
-
-- `make install` to install the plugin in `coq`'s user-contrib local
-  library. Then the `MetaCoq` namespace can be used for `Require
-  Import` statements, e.g. `From MetaCoq.Template Require Import All.`.
-
-Install with OPAM
------------------
-Alternatively, you can install MetaCoq through [`opam`](https://opam.ocaml.org).
-
-Add the Coq repository:
-
-    opam repo add coq-released https://coq.inria.fr/opam/released
-
-and run:
-
-    opam install coq-metacoq
-
-MetaCoq is split into multiple packages that get all installed using the
-`coq-metacoq` meta-package:
-
- - `coq-metacoq-template` for the Template Monad and quoting plugin
- - `coq-metacoq-checker` for the verified checker
- - `coq-metacoq-pcuic` for the PCUIC development
- - `coq-metacoq-extraction` for the verifed extraction.
-
-The `2.2alpha` versions of the package are for `Coq 8.8`.
-
-For some versions, it might be necessary to use beta or development
-versions of Coq, to get those you will need to activate the following repositories:
-
-    opam repo add coq-core-dev https://coq.inria.fr/opam/core-dev
-    opam repo add coq-extra-dev https://coq.inria.fr/opam/extra-dev
-
-
-Old standalone packages `template-coq-2.1~beta` and
-`template-coq-2.1~beta3` including everything together are for Coq 8.8.
-Package `template-coq-2.0~beta` is for Coq 8.7.
-
-How to Use
-==========
-
-Check `test-suite/demo.v` for examples.
-
-Unless you installed the library (with `make install`), you must add the theories directory to
-your Coq load path with the prefix Template. This can be done on the
-command line by adding:
-
-```
-coqc ... -R <path-to-theories> -as Template ...
-```
-or inside a running Coq session with:
-
-```
-Add LoadPath "<path-to-theories>" as Template.
-```
-
-Because paths are often not portable the later is not recommended.
-
-If you use Emacs and Proof General, you can set up a .dir-locals.el with the
-following code:
-```
-((coq-mode . ((coq-load-path . (
- (nonrec "<absolute-path-to-theories>" "Template")
- )))))
-```
-As long as you don't check this file into a repository things should work out
-well.
-
-Bugs
-====
-
-Please report any bugs (or feature requests) on the github [issue tracker](https://github.com/MetaCoq/metacoq/issues)
+- `make html` to generate `html` files for all Coq files.
