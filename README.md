@@ -105,7 +105,7 @@ Compile
 
 Once in the right environment, Use:
 
-- `./configure.sh local` to prepate compilation
+- `./configure.sh local` to prepare compilation
 
 - `make` to compile the `template-coq` plugin, the `safechecker`, the `pcuic`
   development and the `extraction` development. You can also selectively build
