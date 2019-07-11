@@ -1,5 +1,24 @@
 
+(* 
+   This file contains all admitted lemmas and axioms regarding the meta-theory. 
+*)
+
 Notation "a 'of' A" := (match a : A with _ => a end) (at level 100).
+
+(* The notation can be used to check the type of a term and match it with the output of the Check command: *)
+
+Check (true of bool).              (* outputs true : bool *)
+
+Fail Check (true of nat).         (* fails with: The term "true" has type "bool" while it is expected to have type "nat". *)
+
+Require Template.uGraph.
+
+Check (@uGraph.transitive_string_lt
+         of RelationClasses.Transitive utils.string_lt).
+
+Check (@uGraph.CompareSpec_string
+         of forall s s' : String.string,
+            CompareSpec (s = s') (utils.string_lt s s') (utils.string_lt s' s) (utils.string_compare s s')).
 
 Require PCUIC.PCUICTyping.
 
@@ -13,6 +32,18 @@ Check (@PCUICTyping.on_global_env_impl
           (Γ : PCUICAst.context) (t : PCUICAst.term) (T : option PCUICAst.term),
         PCUICTyping.on_global_env P (fst Σ0) -> P Σ0 Γ t T -> Q Σ0 Γ t T) ->
        PCUICTyping.on_global_env P Σ -> PCUICTyping.on_global_env Q Σ).
+
+Check (@PCUICTyping.conv_refl
+     of forall (H : config.checker_flags) (Σ : PCUICAst.global_env_ext) (Γ : PCUICAst.context) (t : PCUICAst.term),
+            PCUICTyping.conv Σ Γ t t).
+
+Check (@PCUICTyping.cumul_refl'
+     of forall (H : config.checker_flags) (Σ : PCUICAst.global_env_ext) (Γ : PCUICAst.context) (t : PCUICAst.term),
+       PCUICTyping.cumul Σ Γ t t).
+
+Check (@PCUICTyping.cumul_trans
+     of forall (H : config.checker_flags) (Σ : PCUICAst.global_env_ext) (Γ : PCUICAst.context) (t u v : PCUICAst.term),
+       PCUICTyping.cumul Σ Γ t u -> PCUICTyping.cumul Σ Γ u v -> PCUICTyping.cumul Σ Γ t v).
 
 Require PCUIC.PCUICWeakeningEnv.
 
@@ -60,7 +91,7 @@ Check (@PCUICWeakeningEnv.check_correct_arity_subset
          (pars : list PCUICAst.term) (pctx : PCUICAst.context),
        Universes.ConstraintSet.Subset φ φ' ->
        PCUICTyping.check_correct_arity φ decl ind u ctx pars pctx ->
-       PCUICTyping.check_correct_arity φ' decl ind u ctx pars pctx). 
+       PCUICTyping.check_correct_arity φ' decl ind u ctx pars pctx).
 
 Require PCUIC.PCUICUnivSubstitution.
 
@@ -75,7 +106,7 @@ Check (@PCUICUnivSubstitution.fix_context_subst_instance
 
 Check (@PCUICUnivSubstitution.isWfArity_subst_instance
      of forall (cf : config.checker_flags)
-         (Σ : PCUICAst.global_env * Universes.universes_decl) 
+         (Σ : PCUICAst.global_env * Universes.universes_decl)
          (Γ : PCUICAst.context) (B : PCUICAst.term),
        PCUICTyping.isWfArity PCUICTyping.typing Σ Γ B ->
        forall (u : Universes.universe_instance) (univs : Universes.universes_decl),
@@ -111,7 +142,7 @@ Check (@PCUICUnivSubstitution.subst_instance_univ_make
 
 Check (@PCUICUnivSubstitution.LevelIn_subst_instance
      of forall (cf : config.checker_flags)
-         (Σ : PCUICAst.global_env * Universes.universes_decl) 
+         (Σ : PCUICAst.global_env * Universes.universes_decl)
          (l : Universes.Level.t),
        Universes.LevelSet.In l (PCUICTyping.global_ext_levels Σ) ->
        forall (u : Universes.universe_instance) (univs : Universes.universes_decl),
@@ -171,56 +202,6 @@ Check (@PCUICUnivSubstitution.typing_subst_instance
        PCUICTyping.typing (fst Σ, univs) (PCUICUnivSubst.subst_instance_context u Γ)
          (PCUICUnivSubst.subst_instance_constr u t)
          (PCUICUnivSubst.subst_instance_constr u T)).
-
-Check (@PCUICReduction.red_fix_one_body
-     of forall (Σ : PCUICAst.global_env) (Γ : PCUICAst.context)
-         (mfix : BasicAst.mfixpoint PCUICAst.term) (idx : nat)
-         (mfix' : list (BasicAst.def PCUICAst.term)),
-       utils.OnOne2
-         (fun x y : BasicAst.def PCUICAst.term =>
-          (PCUICTyping.red Σ
-             (PCUICAstUtils.app_context Γ (PCUICLiftSubst.fix_context mfix))
-             (BasicAst.dbody x) (BasicAst.dbody y) *
-           ((BasicAst.dname x, BasicAst.dtype x, BasicAst.rarg x) =
-            (BasicAst.dname y, BasicAst.dtype y, BasicAst.rarg y)))%type) mfix mfix' ->
-       PCUICTyping.red Σ Γ (PCUICAst.tFix mfix idx) (PCUICAst.tFix mfix' idx)).
-
-Check (@PCUICReduction.red_fix_body
-     of forall (Σ : PCUICAst.global_env) (Γ : PCUICAst.context)
-         (mfix : BasicAst.mfixpoint PCUICAst.term) (idx : nat)
-         (mfix' : list (BasicAst.def PCUICAst.term)),
-       utils.All2
-         (fun x y : BasicAst.def PCUICAst.term =>
-          (PCUICTyping.red Σ
-             (PCUICAstUtils.app_context Γ (PCUICLiftSubst.fix_context mfix))
-             (BasicAst.dbody x) (BasicAst.dbody y) *
-           ((BasicAst.dname x, BasicAst.dtype x, BasicAst.rarg x) =
-            (BasicAst.dname y, BasicAst.dtype y, BasicAst.rarg y)))%type) mfix mfix' ->
-       PCUICTyping.red Σ Γ (PCUICAst.tFix mfix idx) (PCUICAst.tFix mfix' idx)).
-
-Check (@PCUICReduction.red_fix_congr
-     of forall (Σ : PCUICAst.global_env) (Γ : PCUICAst.context)
-         (mfix : BasicAst.mfixpoint PCUICAst.term)
-         (mfix' : list (BasicAst.def PCUICAst.term)) (idx : nat),
-       utils.All2
-         (fun d0 d1 : BasicAst.def PCUICAst.term =>
-          (PCUICTyping.red Σ Γ (BasicAst.dtype d0) (BasicAst.dtype d1) *
-           PCUICTyping.red Σ
-             (PCUICAstUtils.app_context Γ (PCUICLiftSubst.fix_context mfix))
-             (BasicAst.dbody d0) (BasicAst.dbody d1))%type) mfix mfix' ->
-       PCUICTyping.red Σ Γ (PCUICAst.tFix mfix idx) (PCUICAst.tFix mfix' idx)).
-
-Check (@PCUICReduction.red_cofix_congr
-     of forall (Σ : PCUICAst.global_env) (Γ : PCUICAst.context)
-         (mfix0 : BasicAst.mfixpoint PCUICAst.term)
-         (mfix1 : list (BasicAst.def PCUICAst.term)) (idx : nat),
-       utils.All2
-         (fun d0 d1 : BasicAst.def PCUICAst.term =>
-          (PCUICTyping.red Σ Γ (BasicAst.dtype d0) (BasicAst.dtype d1) *
-           PCUICTyping.red Σ
-             (PCUICAstUtils.app_context Γ (PCUICLiftSubst.fix_context mfix0))
-             (BasicAst.dbody d0) (BasicAst.dbody d1))%type) mfix0 mfix1 ->
-       PCUICTyping.red Σ Γ (PCUICAst.tCoFix mfix0 idx) (PCUICAst.tCoFix mfix1 idx)).
 
 Require PCUICCumulativity.
 
@@ -382,7 +363,7 @@ Check (@PCUICSR.context_conversion
 
 Check (@PCUICSR.cumul_Prod_inv
      of forall (cf : config.checker_flags)
-         (Σ : PCUICAst.global_env * Universes.universes_decl) 
+         (Σ : PCUICAst.global_env * Universes.universes_decl)
          (Γ : PCUICAst.context) (na na' : BasicAst.name) (A B A' B' : PCUICAst.term),
        PCUICTyping.wf (fst Σ) ->
        PCUICTyping.All_local_env (PCUICTyping.lift_typing PCUICTyping.typing Σ) Γ ->
@@ -407,7 +388,7 @@ Check (@PCUICSR.sr_red1
 Require PCUICWcbvEval.
 
 Check (PCUICWcbvEval.eval_closed
-     of forall (Σ : PCUICAst.global_env) (Γ : PCUICAst.context) 
+     of forall (Σ : PCUICAst.global_env) (Γ : PCUICAst.context)
          (n : nat) (t u : PCUICAst.term),
        PCUICLiftSubst.closedn n t = true ->
        PCUICWcbvEval.eval Σ Γ t u -> PCUICLiftSubst.closedn n u = true).
@@ -459,7 +440,7 @@ Check (@PCUICElimination.tCase_length_branch_inv
 Check (@PCUICElimination.cumul_prop1
      of forall cf : config.checker_flags,
        config.prop_sub_type = false ->
-       forall (Σ : PCUICAst.global_env_ext) (Γ : PCUICAst.context) 
+       forall (Σ : PCUICAst.global_env_ext) (Γ : PCUICAst.context)
          (A B : PCUICAst.term) (u : Universes.Universe.t),
        PCUICTyping.wf (PCUICAstUtils.fst_ctx Σ) ->
        is_true (Universes.is_prop_sort u) ->
@@ -469,7 +450,7 @@ Check (@PCUICElimination.cumul_prop1
 Check (@PCUICElimination.cumul_prop2
      of forall cf : config.checker_flags,
        config.prop_sub_type = false ->
-       forall (Σ : PCUICAst.global_env_ext) (Γ : PCUICAst.context) 
+       forall (Σ : PCUICAst.global_env_ext) (Γ : PCUICAst.context)
          (A B : PCUICAst.term) (u : Universes.Universe.t),
        PCUICTyping.wf (PCUICAstUtils.fst_ctx Σ) ->
        is_true (Universes.is_prop_sort u) ->
@@ -481,17 +462,18 @@ Check (@PCUICElimination.leq_universe_prop
      of forall cf : config.checker_flags,
        config.prop_sub_type = false ->
        forall (Σ : PCUICAst.global_env_ext) (u1 u2 : Universes.universe),
-       PCUICTyping.wf (PCUICAstUtils.fst_ctx Σ) ->
-       Universes.leq_universe (PCUICTyping.global_ext_constraints Σ) u1 u2 ->
-       is_true (Universes.is_prop_sort u1) \/ is_true (Universes.is_prop_sort u2) ->
-       is_true (Universes.is_prop_sort u1) /\ is_true (Universes.is_prop_sort u2)).
+         config.check_univs = true ->
+         PCUICTyping.wf (PCUICAstUtils.fst_ctx Σ) ->
+         Universes.leq_universe (PCUICTyping.global_ext_constraints Σ) u1 u2 ->
+         is_true (Universes.is_prop_sort u1) \/ is_true (Universes.is_prop_sort u2) ->
+         is_true (Universes.is_prop_sort u1) /\ is_true (Universes.is_prop_sort u2)).
 
 Require PCUICSafeLemmata.
 
 Check (@PCUICSafeLemmata.context_conversion
      of forall cf : config.checker_flags,
        PCUICNormal.RedFlags.t ->
-       forall (Σ : PCUICAst.global_env_ext) (Γ : PCUICAst.context) 
+       forall (Σ : PCUICAst.global_env_ext) (Γ : PCUICAst.context)
          (t T : PCUICAst.term) (Γ' : PCUICAst.context),
        PCUICTyping.typing Σ Γ t T ->
        PCUICSR.context_relation (PCUICSR.conv_decls Σ) Γ Γ' -> PCUICTyping.typing Σ Γ' t T).
@@ -499,7 +481,7 @@ Check (@PCUICSafeLemmata.context_conversion
 Check (@PCUICSafeLemmata.type_rename
      of forall cf : config.checker_flags,
        PCUICNormal.RedFlags.t ->
-       forall (Σ : PCUICAst.global_env * Universes.universes_decl) 
+       forall (Σ : PCUICAst.global_env * Universes.universes_decl)
          (Γ : PCUICAst.context) (u v A : PCUICAst.term),
        PCUICTyping.wf (fst Σ) ->
        PCUICTyping.typing Σ Γ u A ->
@@ -576,25 +558,6 @@ Check (@PCUICSafeLemmata.it_mkLambda_or_LetIn_wellformed
        forall (Γ Δ : PCUICAst.context) (t : PCUICAst.term),
        PCUICSafeLemmata.wellformed Σ (PCUICAstUtils.app_context Γ Δ) t ->
        PCUICSafeLemmata.wellformed Σ Γ (PCUICAstUtils.it_mkLambda_or_LetIn Δ t)).
-
-Check (@PCUICSafeLemmata.isAppProd_isProd
-     of forall cf : config.checker_flags,
-       PCUICNormal.RedFlags.t ->
-       forall Σ : PCUICAst.global_env_ext,
-       utils.squash (PCUICTyping.wf (PCUICAstUtils.fst_ctx Σ)) ->
-       forall (Γ : PCUICAst.context) (t : PCUICAst.term),
-       is_true (PCUICSafeLemmata.isAppProd t) ->
-       PCUICSafeLemmata.welltyped Σ Γ t -> is_true (PCUICSafeLemmata.isProd t)).
-
-Check (@PCUICSafeLemmata.mkApps_Prod_nil'
-     of forall cf : config.checker_flags,
-       PCUICNormal.RedFlags.t ->
-       forall Σ : PCUICAst.global_env_ext,
-       utils.squash (PCUICTyping.wf (PCUICAstUtils.fst_ctx Σ)) ->
-       forall (Γ : PCUICAst.context) (na : BasicAst.name) (A B : PCUICAst.term)
-         (l : list PCUICAst.term),
-       PCUICSafeLemmata.wellformed Σ Γ (PCUICAst.mkApps (PCUICAst.tProd na A B) l) ->
-       l = nil).
 
 Check (@PCUICSafeLemmata.Lambda_conv_inv
      of forall cf : config.checker_flags,
@@ -745,9 +708,74 @@ Check (@PCUICSafeLemmata.Proj_red_cond
        PCUICNormal.RedFlags.t ->
        forall Σ : PCUICAst.global_env_ext,
        utils.squash (PCUICTyping.wf (PCUICAstUtils.fst_ctx Σ)) ->
-       forall (Γ : PCUICAst.context) (i : BasicAst.inductive) 
+       forall (Γ : PCUICAst.context) (i : BasicAst.inductive)
          (pars narg : nat) (i' : BasicAst.inductive) (c : nat)
          (u : Universes.universe_instance) (l : list PCUICAst.term),
        PCUICSafeLemmata.wellformed Σ Γ
          (PCUICAst.tProj (i, pars, narg) (PCUICAst.mkApps (PCUICAst.tConstruct i' c u) l)) ->
        List.nth_error l (pars + narg) <> None).
+
+Check (@PCUICSafeLemmata.strengthening
+         of forall (cf : config.checker_flags) (Σ : PCUICAst.global_env * Universes.universes_decl) (Γ Γ' Γ'' : PCUICAst.context)
+              (t T : PCUICAst.term),
+            PCUICTyping.wf (fst Σ) ->
+            PCUICTyping.typing Σ (PCUICAstUtils.app_context (PCUICAstUtils.app_context Γ Γ'') (PCUICWeakening.lift_context (length Γ'') 0 Γ'))
+                               (PCUICLiftSubst.lift (length Γ'') (length Γ') t) (PCUICLiftSubst.lift (length Γ'') (length Γ') T) ->
+            PCUICTyping.typing Σ (PCUICAstUtils.app_context Γ Γ') t T).
+
+Check (@PCUICSafeLemmata.type_Case_valid_btys
+         of forall (cf : config.checker_flags) (Σ : PCUICAst.global_env * Universes.universes_decl) (Γ : PCUICAst.context)
+  (ind : BasicAst.inductive) (u : Universes.universe_instance) (p : PCUICAst.term) (args : list PCUICAst.term)
+  (mdecl : PCUICAst.mutual_inductive_body) (idecl : PCUICAst.one_inductive_body),
+PCUICTyping.declared_inductive (fst Σ) mdecl ind idecl ->
+let pars := List.firstn (PCUICAst.ind_npars mdecl) args in
+forall pty : PCUICAst.term,
+PCUICTyping.typing Σ Γ p pty ->
+forall (indctx pctx : list PCUICAst.context_decl) (ps : Universes.universe) (btys : list (nat * PCUICAst.term)),
+PCUICTyping.types_of_case ind mdecl idecl pars u p pty = Some (indctx, pctx, ps, btys) ->
+PCUICTyping.check_correct_arity (PCUICTyping.global_ext_constraints Σ) idecl ind u indctx pars pctx ->
+List.Forall (fun A : nat * PCUICAst.term => PCUICSafeLemmata.wellformed Σ Γ (snd A)) btys).
+
+Check (@PCUICSafeLemmata.isWfArity_or_Type_cumul
+         of forall (cf : config.checker_flags) (Σ : PCUICAst.global_env_ext) (Γ : PCUICAst.context) (A A' : PCUICAst.term),
+PCUICTyping.cumul Σ Γ A' A -> PCUICGeneration.isWfArity_or_Type Σ Γ A' -> PCUICGeneration.isWfArity_or_Type Σ Γ A).
+
+Require PCUICSN.
+
+Check (@PCUICSN.normalisation
+         of forall cf : config.checker_flags,
+            forall (Σ : PCUICAst.global_env_ext) (Γ : PCUICAst.context)
+              (t : PCUICAst.term),
+              PCUICSafeLemmata.welltyped Σ Γ t ->
+              Acc (PCUICSafeLemmata.cored (fst Σ) Γ) t).
+
+Check (@PCUICSN.Acc_cored_Prod
+         of forall cf : config.checker_flags,
+            forall (Σ : PCUICAst.global_env_ext) (Γ : PCUICAst.context)
+              (n : BasicAst.name)
+              (t1 t2 : PCUICAst.term),
+              Acc (PCUICSafeLemmata.cored (PCUICAstUtils.fst_ctx Σ) Γ) t1 ->
+              Acc
+                (PCUICSafeLemmata.cored (PCUICAstUtils.fst_ctx Σ)
+                                        (PCUICAst.snoc Γ (PCUICAst.vass n t1))) t2 ->
+              Acc (PCUICSafeLemmata.cored (PCUICAstUtils.fst_ctx Σ) Γ)
+                  (PCUICAst.tProd n t1 t2)).
+
+Check (@PCUICSN.Acc_cored_LetIn
+         of forall cf : config.checker_flags,
+            forall (Σ : PCUICAst.global_env_ext) (Γ : PCUICAst.context)
+              (n : BasicAst.name) (t1 t2 t3 : PCUICAst.term),
+              Acc (PCUICSafeLemmata.cored (PCUICAstUtils.fst_ctx Σ) Γ) t1 ->
+              Acc (PCUICSafeLemmata.cored (PCUICAstUtils.fst_ctx Σ) Γ) t2 ->
+              Acc (PCUICSafeLemmata.cored (PCUICAstUtils.fst_ctx Σ)
+                                          (PCUICAst.snoc Γ (PCUICAst.vdef n t1 t2))) t3 ->
+              Acc (PCUICSafeLemmata.cored (PCUICAstUtils.fst_ctx Σ) Γ)
+                  (PCUICAst.tLetIn n t1 t2 t3)).
+
+Check (@PCUICSN.isWfArity_red1
+         of forall cf : config.checker_flags,
+            forall (Σ : PCUICAst.global_env_ext) (Γ : PCUICAst.context)
+              (A B : PCUICAst.term),
+              PCUICTyping.red1 (fst Σ) Γ A B ->
+              PCUICTyping.isWfArity PCUICTyping.typing Σ Γ A ->
+              PCUICTyping.isWfArity PCUICTyping.typing Σ Γ B).

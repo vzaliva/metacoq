@@ -1,7 +1,11 @@
 
 From Coq Require Import Bool String List Program BinPos Compare_dec Omega.
-From MetaCoq.Template Require Import config utils monad_utils BasicAst AstUtils uGraph.
-From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils PCUICInduction PCUICTyping PCUICMetaTheory PCUICWcbvEval PCUICLiftSubst PCUICInversion PCUICConfluence PCUICCumulativity PCUICSR PCUICNormal PCUICSafeLemmata PCUICValidity PCUICPrincipality PCUICElimination.
+From MetaCoq.Template Require Import config utils monad_utils BasicAst AstUtils
+     uGraph.
+From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils PCUICInduction
+     PCUICTyping PCUICMetaTheory PCUICWcbvEval PCUICLiftSubst PCUICInversion
+     PCUICConfluence PCUICCumulativity PCUICSR PCUICNormal PCUICSafeLemmata
+     PCUICValidity PCUICPrincipality PCUICElimination PCUICSN.
 From MetaCoq.SafeChecker Require Import PCUICSafeReduce PCUICSafeChecker.
 From MetaCoq.Extraction Require EAst ELiftSubst ETyping EWcbvEval Extract ExtractionCorrectness.
 From Equations Require Import Equations.
@@ -48,7 +52,7 @@ Ltac sq' := try (destruct HΣ; clear HΣ);
 Instance wf_reduction : WellFounded term_rel.
 Proof.
   intros (Γ & s & H). sq'.
-  induction (normalisation' RedFlags.default Σ Γ s X H) as [s _ IH].
+  induction (normalisation' Σ Γ s X H) as [s _ IH].
   induction (wf_cod' s) as [s _ IH_sub] in Γ, H, IH |- *.
   econstructor.
   intros (Γ' & B & ?) [(na & A & ? & ?)]. subst.
@@ -65,10 +69,10 @@ Proof.
       * eapply red_neq_cored. exact r. intros ?. subst.
         eapply cored_red_trans in X0; eauto.
         eapply Acc_no_loop in X0. eauto.
-        eapply @normalisation'; eauto. exact RedFlags.default.
+        eapply @normalisation'; eauto.
       * repeat econstructor.
 Grab Existential Variables.
-- eapply red_wellformed; sq. 3:eauto. all:eauto. exact RedFlags.default.
+- eapply red_wellformed; sq. 3:eauto. all:eauto.
 - destruct H as [[] |[]].
   -- eapply inversion_Prod in X0 as (? & ? & ? & ? & ?).
      eapply cored_red in H0 as [].
@@ -81,7 +85,7 @@ Grab Existential Variables.
      exists (x ++ [vass na A])%list, x0. cbn; split.
      2:{ unfold snoc, app_context in *. rewrite <- app_assoc. eassumption. }
      change ([] ,, vass na A) with ([vass na A] ,,, []).
-     rewrite destArity_app_aux. rewrite e. cbn. reflexivity. apply RedFlags.default.
+     rewrite destArity_app_aux. rewrite e. cbn. reflexivity.
 Qed.
 
 Ltac sq := try (destruct HΣ as [wfΣ]; clear HΣ);
@@ -116,7 +120,7 @@ Next Obligation.
     econstructor. eauto. cbn. eauto.
   - econstructor. eauto.
     eapply isWfArity_red in X; eauto.
-    cbn. eapply isWfArity_prod_inv; eauto. apply RedFlags.default.
+    cbn. eapply isWfArity_prod_inv; eauto.
 Qed.
 Next Obligation.
   sq. destruct HT as [ [] | [] ].
@@ -124,7 +128,7 @@ Next Obligation.
     eapply inversion_Prod in X5 as (? & ? & ? & ? & ?).
     do 2 econstructor. eauto.
   - econstructor 2. sq.
-    eapply PCUICSafeReduce.isWfArity_red in X5; eauto. 2:exact RedFlags.default.
+    eapply isWfArity_red in X5; eauto.
     eapply isWfArity_prod_inv; eauto.
 Qed.
 Next Obligation.
@@ -387,7 +391,7 @@ Proof.
          )); intros.
 
   all:eauto.
-  
+
   all: simp erase in *.
   all: unfold erase_clause_1 in *.
   all:sq.
@@ -538,35 +542,33 @@ Lemma erase_global_correct Σ (wfΣ : ∥ wf Σ∥) Σ' :
 Proof.
   induction Σ in wfΣ, Σ' |- *; intros; sq.
   - inv H. econstructor.
-  - cbn in H. unfold bind in *. cbn in *. repeat destruct ?; try congruence. 
+  - cbn in H. unfold bind in *. cbn in *. repeat destruct ?; try congruence.
     + inv H. inv E.
       unfold erase_constant_body in E1.
       unfold bind in E1. cbn in E1. repeat destruct ?; try congruence.
       inv E1. econstructor.
-      * unfold optM in E0. destruct ?; try congruence.
+      * unfold optM in E4. destruct ?; try congruence.
         -- unfold erases_constant_body.
           cbn. cbn in *.
            destruct ( erase (Σ, _)
            (erase_global_decls_obligation_1 (ConstantDecl k c :: Σ)
               (sq w) k c Σ eq_refl) [] wf_local_nil t) eqn:E5;
-             rewrite E5 in E0; inv E0.
-           rewrite E1.
+             rewrite E5 in E4; inv E4.
+           rewrite E.
            eapply erases_erase. 2:eauto.
            instantiate (1 := cst_type c).
            (* admit. *)
-           clear - w E1.
+           clear - w E.
            inv w. cbn in X0.
            cbn in *. unfold on_constant_decl in X0.
-           rewrite E1 in X0. cbn in X0. eassumption.
-        -- cbn. inv E0. unfold erases_constant_body.
-           rewrite E1. cbn. econstructor.
+           rewrite E in X0. cbn in X0. eassumption.
+        -- cbn. inv E4. unfold erases_constant_body.
+           rewrite E. cbn. econstructor.
       * eapply IHΣ. unfold erase_global. rewrite E2. reflexivity.
     + inv H. inv E. inv E1.
-      unfold erase_mutual_inductive_body, bind in H0. cbn in H0.
-      destruct ?; try congruence. inv H0.
       econstructor.
       * econstructor; cbn; eauto.
-        pose proof (Prelim.monad_map_All2 _ _ _ _ _ E).
+        pose proof (Prelim.monad_map_All2 _ _ _ _ _ E3).
         eapply All2_Forall2.
         eapply All2_impl. eassumption.
 
