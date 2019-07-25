@@ -10,7 +10,6 @@ From MetaCoq.PCUIC Require Import PCUICAst PCUICAstUtils PCUICInduction
 Require Import ssreflect ssrbool.
 Require Import String.
 From MetaCoq Require Import LibHypsNaming.
-Local Open Scope string_scope.
 Set Asymmetric Patterns.
 Require Import CRelationClasses.
 Require Import Equations.Type.Relation Equations.Type.Relation_Properties.
@@ -70,14 +69,6 @@ Instance cumul_transitive {cf : checker_flags} {Σ : global_env_ext} {wfΣ : wf 
 Proof. intros x y z. eapply cumul_trans. auto. Qed.
 
 Existing Class wf.
-
-Lemma congr_cumul_prod : forall `{checker_flags} Σ Γ na na' M1 M2 N1 N2,
-    Σ ;;; Γ |- M1 == N1 ->
-    Σ ;;; (Γ ,, vass na M1) |- M2 <= N2 ->
-    Σ ;;; Γ |- (tProd na M1 M2) <= (tProd na' N1 N2).
-Proof.
-  intros.
-Admitted.
 
 (* Should follow from context conversion + invariants on T and U *)
 (* Lemma conv_conv_alt `{cf : checker_flags} {Σ : global_env_ext} (wfΣ : wf Σ) Γ T U : *)
@@ -291,12 +282,38 @@ Proof.
   depelim H. now eapply IHΓ.
 Qed.
 
+Hint Constructors conv_decls.
+Hint Constructors context_relation.
+
+Lemma conv_context_app {cf : checker_flags} (Σ : global_env_ext) Γ Γ' Δ Δ' :
+  conv_context Σ Γ Γ' ->
+  context_relation (fun Δ Δ' => conv_decls Σ (Δ ++ Γ) (Δ' ++ Γ')) Δ Δ' ->
+  conv_context Σ (Δ ++ Γ) (Δ' ++ Γ').
+Proof.
+  intros H H'. induction H'; auto.
+  - depelim p. simpl; constructor; auto.
+  - depelim p; simpl; constructor; auto.
+Qed.
+
+Lemma conv_context_app_inv {cf : checker_flags} (Σ : global_env_ext) Γ Γ' Δ Δ' :
+  #|Δ| = #|Δ'| ->
+  conv_context Σ (Δ ++ Γ) (Δ' ++ Γ') ->
+  conv_context Σ Γ Γ' *
+  context_relation (fun Δ Δ' => conv_decls Σ (Δ ++ Γ) (Δ' ++ Γ')) Δ Δ'.
+Proof.
+  revert Γ Γ'.
+  induction Δ in Δ' |- *; intros; destruct Δ'; try discriminate.
+  - split; auto.
+  - simpl in H. inversion H.
+    specialize (IHΔ Δ'). depelim X; split; auto; now specialize (IHΔ _ _ H1 X).
+Qed.
+
 Lemma it_mkProd_or_LetIn_ass_inv {cf : checker_flags} (Σ : global_env_ext) Γ ctx ctx' s s' :
   wf Σ ->
   assumption_context ctx ->
   assumption_context ctx' ->
   Σ ;;; Γ |- it_mkProd_or_LetIn ctx (tSort s) <= it_mkProd_or_LetIn ctx' (tSort s') ->
-  conv_context Σ ctx ctx' * leq_term Σ (tSort s) (tSort s').
+  context_relation (fun Δ Δ' => conv_decls Σ (Γ ++ Δ) (Γ ++ Δ')) ctx ctx' * leq_term Σ (tSort s) (tSort s').
 Proof.
   intros wfΣ.
   revert Γ ctx' s s'.
@@ -326,7 +343,10 @@ Proof.
     rewrite /= /mkProd_or_LetIn /= in X.
     eapply cumul_Prod_Prod_inv in X as [Hdom Hcodom]; auto.
     specialize (IHctx (Γ ,, vass na' ty') l0 s s' H H0 Hcodom). clear IHctx'.
-    intuition auto.
+    intuition auto. clear Hcodom.
+    induction a; simpl; constructor; auto.
+    * constructor. now rewrite app_nil_r.
+    * eapply IHa. now depelim H. now depelim H0.
 Admitted.
 
 (** Injectivity of products, the essential property of cumulativity needed for subject reduction. *)
@@ -581,6 +601,21 @@ Section Inversions.
       + eapply conv_cumul_l. eapply conv_Prod_l. assumption.
   Qed.
 
+  Lemma congr_cumul_prod Γ na na' M1 M2 N1 N2 :
+    Σ ;;; Γ |- M1 == N1 ->
+    Σ ;;; (Γ ,, vass na M1) |- M2 <= N2 ->
+    Σ ;;; Γ |- (tProd na M1 M2) <= (tProd na' N1 N2).
+  Proof.
+    intros.
+    eapply cumul_trans with (tProd na N1 M2) => //.
+    eapply conv_alt_cumul => //.
+    now eapply conv_Prod_l.
+    eapply cumul_trans with (tProd na N1 N2) => //.
+    eapply cumul_Prod_r. eapply cumul_conv_ctx; eauto.
+    constructor; auto. apply conv_ctx_refl. constructor. auto.
+    eapply conv_alt_cumul; auto. constructor; auto. constructor; reflexivity.
+  Qed.
+
   Lemma cumul_Case_c :
     forall Γ indn p brs u v,
       Σ ;;; Γ |- u == v ->
@@ -628,6 +663,17 @@ Section Inversions.
       econstructor. assumption.
     - eapply conv_alt_red_r ; eauto.
       econstructor. assumption.
+  Qed.
+
+  Lemma conv_App :
+    forall {Γ f g x y},
+      Σ ;;; Γ |- f == g ->
+      Σ ;;; Γ |- x == y ->
+      Σ ;;; Γ |- tApp f x == tApp g y.
+  Proof.
+    intros Γ f g x y h h'.
+    transitivity (tApp f y). now apply conv_App_r.
+    now apply conv_App_l.
   Qed.
 
   Lemma conv_Case_c :
