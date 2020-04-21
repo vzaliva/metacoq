@@ -1309,8 +1309,8 @@ Section ParallelWeakening.
               !app_context_assoc in forall_Γ0.
       now rewrite !lift_fix_context.
       unfold unfold_fix. rewrite nth_error_map. rewrite Hnth. simpl.
-      destruct (isLambda (dbody d)) eqn:isl; noconf heq_unfold_fix.
       rewrite isLambda_lift //.
+      destruct (isLambda (dbody d)) eqn:isl; noconf heq_unfold_fix.
       f_equal. f_equal.
       rewrite distr_lift_subst. rewrite fix_subst_length. f_equal.
       now rewrite (map_fix_subst (fun k => lift #|Δ''| (k + #|Δ'|))).
@@ -1839,33 +1839,31 @@ Section ParallelSubstitution.
 
     - autorewrite with subst. simpl.
       unfold unfold_cofix in heq_unfold_cofix.
-      destruct (nth_error mfix1 idx) eqn:Hnth; noconf heq_unfold_cofix. simpl.
-      econstructor; pcuic.
-      eapply X0; pcuic.
-      rewrite !subst_fix_context.
-      erewrite subst_fix_context.
-      eapply All2_local_env_subst_ctx; pcuic.
-      apply All2_map. clear X2. red in X3.
-      unfold on_Trel, id in *.
-      solve_all. rename_all_hyps.
-      specialize (forall_Γ0 _ _ (Γ'0 ,,, fix_context mfix0)
-                            ltac:(now rewrite app_context_assoc)).
-      specialize (forall_Γ0 _ _ (Γ'1 ,,, fix_context mfix1) _ _ Hs
-                            ltac:(now rewrite app_context_assoc) heq_length).
-      rewrite !app_context_length in forall_Γ0.
-      pose proof (All2_local_env_length X1).
-      forward forall_Γ0. lia. specialize (forall_Γ0 HΔ).
-      rewrite !subst_fix_context.
-      now rewrite !fix_context_length !subst_context_app
-          !Nat.add_0_r !app_context_assoc in forall_Γ0.
-      unfold unfold_cofix. rewrite nth_error_map. rewrite Hnth. simpl.
-      f_equal. f_equal.
-      rewrite (map_cofix_subst (fun k => subst s' (k + #|Γ'1|))).
-      intros. reflexivity. simpl.
-      now rewrite (distr_subst_rec _ _ _ _ 0) cofix_subst_length.
-
-      eapply All2_map. solve_all.
-      eapply All2_map. solve_all.
+      destruct (nth_error mfix1 idx) eqn:Hnth; noconf heq_unfold_cofix.
+      econstructor; eauto.
+      + rewrite !subst_fix_context.
+        erewrite subst_fix_context.
+        eapply All2_local_env_subst_ctx; pcuic.
+      + apply All2_map. clear X2. red in X3.
+        unfold on_Trel, id in *.
+        solve_all. rename_all_hyps.
+        specialize (forall_Γ0 _ _ (Γ'0 ,,, fix_context mfix0)
+                              ltac:(now rewrite app_context_assoc)).
+        specialize (forall_Γ0 _ _ (Γ'1 ,,, fix_context mfix1) _ _ Hs
+                              ltac:(now rewrite app_context_assoc) heq_length).
+        rewrite !app_context_length in forall_Γ0.
+        pose proof (All2_local_env_length X1).
+        forward forall_Γ0. lia. specialize (forall_Γ0 HΔ).
+        rewrite !subst_fix_context.
+        now rewrite !fix_context_length !subst_context_app
+            !Nat.add_0_r !app_context_assoc in forall_Γ0.
+      + unfold unfold_cofix. rewrite nth_error_map. rewrite Hnth. simpl.
+        f_equal. f_equal.
+        rewrite (map_cofix_subst (fun k => subst s' (k + #|Γ'1|))).
+        intros. reflexivity. simpl.
+        now rewrite (distr_subst_rec _ _ _ _ 0) cofix_subst_length.
+      + eapply All2_map. solve_all.
+      + eapply All2_map. solve_all.
 
     - autorewrite with subst. simpl.
       unfold unfold_cofix in heq_unfold_cofix.
@@ -1923,7 +1921,7 @@ Section ParallelSubstitution.
       apply All2_map. red in X0. unfold on_Trel, id in *.
       pose proof (All2_length _ _ X3).
       eapply All2_impl; eauto. simpl. intros.
-      destruct X. destruct o, p. destruct p. rename_all_hyps.
+      destruct X as [[] [[] ?]]. rename_all_hyps.
       specialize (forall_Γ1 _ _ (_ ,,, fix_context mfix0) ltac:(now rewrite - app_context_assoc)
       _ _ (_ ,,, fix_context mfix1) _ _ Hs ltac:(now rewrite - app_context_assoc) heq_length).
       rewrite !app_context_length !fix_context_length in forall_Γ1. forward forall_Γ1 by lia.
@@ -1942,7 +1940,7 @@ Section ParallelSubstitution.
       apply All2_map. red in X0. unfold on_Trel, id in *.
       pose proof (All2_length _ _ X3).
       eapply All2_impl; eauto. simpl. intros.
-      destruct X. destruct o, p. destruct p. rename_all_hyps.
+      destruct X as [[] [[] ?]]. rename_all_hyps.
       specialize (forall_Γ1 _ _ (_ ,,, fix_context mfix0) ltac:(now rewrite - app_context_assoc)
       _ _ (_ ,,, fix_context mfix1) _ _ Hs ltac:(now rewrite - app_context_assoc) heq_length).
       rewrite !app_context_length !fix_context_length in forall_Γ1. forward forall_Γ1 by lia.

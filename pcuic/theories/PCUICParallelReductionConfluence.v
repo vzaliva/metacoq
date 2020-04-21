@@ -3305,8 +3305,7 @@ Section Confluence.
     apply IHAll2; clear IHAll2.
     rewrite -H in Hctxs.
     apply Hctxs; clear Hctxs.
-    clear IHAll2 Hctxs. destruct r.
-    destruct o0. destruct p. destruct p.
+    clear IHAll2 Hctxs. rdestruct r.
     simpl in *. simpl in H.
     rewrite H in o |- *.
     rewrite rho_ctx_app in o. apply o.
@@ -3381,8 +3380,7 @@ Section Confluence.
     forward IHAll2 by lia.
     forward IHAll2 by lia. rewrite -Hlen in IHAll2.
     apply IHAll2; clear IHAll2. apply Hctxs; clear Hctxs.
-    clear IHAll2 Hctxs. destruct r.
-    destruct o0. destruct p. destruct p. red in o.
+    clear IHAll2 Hctxs. rdestruct r. red in o.
     simpl in *. noconf Heqlen. simpl in H.
     rewrite H in o |- *.
     rewrite rho_ctx_app in o. apply o.
@@ -4063,8 +4061,8 @@ Section Confluence.
         unfold unfold_cofix. rewrite nth_error_map.
         assert (All2 (on_Trel eq dname) mfix'
                      (map_fix rho (rho_ctx Γ) (fold_fix_context rho (rho_ctx Γ) [] mfix) mfix)).
-        { eapply All2_impl; [eapply b0|]; pcuic. intros.
-          red in X1. now noconf X1. }
+        { eapply All2_impl; [eapply b0|]; pcuic. intros X1.
+          now noconf X1. }
         pose proof (All2_mix a1 X1).
         eapply pred1_rho_fix_context_2 in X2; pcuic.
         rewrite - fold_fix_context_rho_ctx in X2.
@@ -4161,8 +4159,8 @@ Section Confluence.
         eapply All2_prop2_eq_split in a1. intuition auto.
         assert (All2 (on_Trel eq dname) mfix'
                      (map_fix rho (rho_ctx Γ) (fold_fix_context rho (rho_ctx Γ) [] mfix) mfix)).
-        { eapply All2_impl; [eapply b|]; pcuic. intros.
-          red in X0. now noconf X0. }
+        { eapply All2_impl; [eapply b|]; pcuic. intros X0.
+          now noconf X0. }
         pose proof (All2_mix a1 X0) as X2.
         eapply pred1_rho_fix_context_2 in X2; pcuic.
         rewrite - fold_fix_context_rho_ctx in X2.
