@@ -128,6 +128,11 @@ struct
      ast "tSort", ast "tCast", ast "tProd", ast "tLambda",
      ast "tLetIn", ast "tApp", ast "tCase", ast "tFix",
      ast "tConstruct", ast "tConst", ast "tInd", ast "tCoFix", ast "tProj")
+  let tkername = ast "kername"
+  let tmodpath = ast "modpath"
+  let tMPfile = ast "MPfile"
+  let tMPbound = ast "MPbound"
+  let tMPdot = ast "MPdot"
 
   let tlevel = ast "level.t"
   let tLevel = ast "level.Level"

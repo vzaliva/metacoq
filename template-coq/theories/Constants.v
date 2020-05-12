@@ -46,6 +46,11 @@ Register MetaCoq.Template.TemplateMonad.Common.existT_typed_term as metacoq.sigm
 Register MetaCoq.Template.BasicAst.nAnon as metacoq.ast.nAnon.
 Register MetaCoq.Template.BasicAst.nNamed as metacoq.ast.nNamed.
 Register MetaCoq.Template.BasicAst.ident as metacoq.ast.ident.
+Register MetaCoq.Template.BasicAst.kername as metacoq.ast.kername.
+Register MetaCoq.Template.BasicAst.modpath as metacoq.ast.modpath.
+Register MetaCoq.Template.BasicAst.MPfile as metacoq.ast.MPfile.
+Register MetaCoq.Template.BasicAst.MPbound as metacoq.ast.MPbound.
+Register MetaCoq.Template.BasicAst.MPdot as metacoq.ast.MPdot.
 Register MetaCoq.Template.BasicAst.name as metacoq.ast.name.
 Register MetaCoq.Template.BasicAst.inductive as metacoq.ast.inductive.
 Register MetaCoq.Template.BasicAst.mkInd as metacoq.ast.mkInd.

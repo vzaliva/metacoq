@@ -9,7 +9,7 @@ Set Printing Universes.
 (** Reduction strategy to apply, beware [cbv], [cbn] and [lazy] are _strong_. *)
  
 Monomorphic Variant reductionStrategy : Set :=
-  cbv | cbn | hnf | all | lazy | unfold (i : ident).
+  cbv | cbn | hnf | all | lazy | unfold (i : kername).
 
 Record typed_term : Type := existT_typed_term
 { my_projT1 : Type
@@ -44,7 +44,7 @@ Record TMInstance@{t u r} :=
 (* FIXME take an optional universe context as well *)
 ; tmMkInductive : mutual_inductive_entry -> TemplateMonad unit
 (* Typeclass registration and querying for an instance *)
-; tmExistingInstance : ident -> TemplateMonad unit
+; tmExistingInstance : kername -> TemplateMonad unit
 }.
 
 Monomorphic Variant import_status : Set :=

@@ -1,6 +1,3 @@
-(* open Univ
- * open Names *)
-open Pp (* this adds the ++ to the current scope *)
 open Names
 open Quoted
 open Denoter
@@ -49,14 +46,7 @@ struct
       | ACoq_tConst (s,u) ->
         let s = D.unquote_kn s in
         let evm, u = D.unquote_universe_instance evm u in
-        (try
-           match Nametab.locate s with
-           | Names.GlobRef.ConstRef c -> evm, Constr.mkConstU (c, u)
-           | Names.GlobRef.IndRef _ -> CErrors.user_err (str"The constant " ++ Libnames.pr_qualid s ++ str" is an inductive, use tInd.")
-           | Names.GlobRef.VarRef _ -> CErrors.user_err (str"The constant " ++ Libnames.pr_qualid s ++ str" is a variable, use tVar.")
-           | Names.GlobRef.ConstructRef _ -> CErrors.user_err (str"The constant " ++ Libnames.pr_qualid s ++ str" is a constructor, use tConstructor.")
-         with
-           Not_found -> CErrors.user_err (str"Constant not found: " ++ Libnames.pr_qualid s))
+        evm, Constr.mkConstU (Constant.make1 s, u)
       | ACoq_tConstruct (i,idx,u) ->
         let ind = D.unquote_inductive i in
         let evm, u = D.unquote_universe_instance evm u in

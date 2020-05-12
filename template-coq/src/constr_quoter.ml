@@ -210,7 +210,21 @@ struct
   let quote_inductive (kn, i) =
     constr_mkApp (tmkInd, [| kn; i |])
 
-  let quote_kn kn = quote_string (KerName.to_string kn)
+  let quote_dirpath dp =
+    let l = DirPath.repr dp in
+    to_coq_listl tident (List.map quote_ident l)
+
+  let rec quote_modpath mp =
+    match mp with
+    | MPfile dp -> constr_mkApp (tMPfile, [|quote_dirpath dp|])
+    | MPbound mbid -> let (_, id, dp) = MBId.repr mbid in
+      constr_mkApp (tMPbound, [|quote_dirpath dp ; quote_ident id|])
+    | MPdot (mp, id) -> constr_mkApp (tMPdot, [|quote_modpath mp; quote_ident (Label.to_id id)|])
+
+  let quote_kn kn =
+    pairl tmodpath tident (quote_modpath (KerName.modpath kn))
+      (quote_ident (Label.to_id (KerName.label kn)))
+
 
   (* useful? *)
   let quote_proj ind pars args =

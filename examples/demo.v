@@ -69,7 +69,7 @@ MetaCoq Quote Definition eo_syntax := Eval compute in even.
 MetaCoq Quote Definition add'_syntax := Eval compute in add'.
 
 (** Reflecting definitions **)
-MetaCoq Unquote Definition zero_from_syntax := (Ast.tConstruct (mkInd "Coq.Init.Datatypes.nat" 0) 0 []).
+MetaCoq Unquote Definition zero_from_syntax := (Ast.tConstruct (mkInd (MPfile ["Datatypes"; "Init"; "Coq"], "nat") 0) 0 []).
 
 (* the function unquote_kn in reify.ml4 is not yet implemented *)
 MetaCoq Unquote Definition add_from_syntax := add_syntax.

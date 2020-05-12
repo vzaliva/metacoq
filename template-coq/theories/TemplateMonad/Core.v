@@ -54,7 +54,7 @@ Cumulative Inductive TemplateMonad@{t u} : Type@{t} -> Prop :=
 | tmUnquoteTyped : forall A : Type@{t}, Ast.term -> TemplateMonad A
 
 (* Typeclass registration and querying for an instance *)
-| tmExistingInstance : qualid -> TemplateMonad unit
+| tmExistingInstance : kername -> TemplateMonad unit
 | tmInferInstance : option reductionStrategy -> forall A : Type@{t}, TemplateMonad (option_instance A)
 .
 
@@ -88,10 +88,11 @@ Definition tmDefinition id {A} t := @tmDefinitionRed_ false id None A t.
 
 (** Don't remove. Constants used in the implem of the plugin *)
 Definition tmTestQuote {A} (t : A) := tmQuote t >>= tmPrint.
+(* todo correct *)
 Definition tmTestUnquote (t : term) :=
      t' <- tmUnquote t ;;
-     t'' <- tmEval (unfold "Template.TemplateMonad.Common.my_projT2") (my_projT2 t') ;;
-     tmPrint t''.
+     (* t'' <- tmEval (unfold "Template.TemplateMonad.Common.my_projT2") (my_projT2 t') ;; *)
+     tmPrint t'.
 
 Definition tmQuoteDefinition id {A} (t : A) := tmQuote t >>= tmDefinition id.
 Definition tmQuoteDefinitionRed id rd {A} (t : A)
@@ -99,8 +100,9 @@ Definition tmQuoteDefinitionRed id rd {A} (t : A)
 Definition tmQuoteRecDefinition id {A} (t : A)
   := tmQuoteRec t >>= tmDefinition id.
 
-Definition tmMkDefinition id (tm : term) : TemplateMonad unit
+(* todo correct *)
+Definition tmMkDefinition (id : ident) (tm : term) : TemplateMonad unit
   := t' <- tmUnquote tm ;;
-     t'' <- tmEval (unfold "Template.TemplateMonad.Common.my_projT2") (my_projT2 t') ;;
-     tmDefinitionRed id (Some (unfold "Template.TemplateMonad.Common.my_projT1")) t'' ;;
+     (* t'' <- tmEval (unfold "Template.TemplateMonad.Common.my_projT2") (my_projT2 t') ;; *)
+     (* tmDefinitionRed id (Some (unfold "Template.TemplateMonad.Common.my_projT1")) t'' ;; *)
      tmReturn tt.

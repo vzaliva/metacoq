@@ -5,7 +5,28 @@ Local Open Scope string_scope.
 
 Definition ident   := string. (* e.g. nat *)
 Definition qualid  := string. (* e.g. Datatypes.nat *)
-Definition kername := string. (* e.g. Coq.Init.Datatypes.nat *)
+
+Definition dirpath := list ident.
+
+Definition string_of_dirpath : dirpath -> string
+  := String.concat ".".
+
+Inductive modpath :=
+| MPfile  (dp : dirpath)
+| MPbound (dp : dirpath) (id : ident)
+| MPdot   (mp : modpath) (id : ident).
+
+Fixpoint string_of_modpath (mp : modpath) : string :=
+  match mp with
+  | MPfile dp => string_of_dirpath dp
+  | MPbound dp id => string_of_dirpath dp ++ "." ++ id
+  | MPdot mp id => string_of_modpath mp ++ "." ++ id
+  end.
+
+Definition kername := modpath × ident.
+
+Definition string_of_kername (kn : kername) :=
+  string_of_modpath kn.1 ++ "." ++ kn.2.
 
 Inductive name : Set :=
 | nAnon
@@ -22,7 +43,7 @@ Record inductive : Set := mkInd { inductive_mind : kername ;
 Arguments mkInd _%string _%nat.
 
 Definition string_of_inductive (i : inductive) :=
-  (inductive_mind i) ++ "," ++ string_of_nat (inductive_ind i).
+  string_of_kername (inductive_mind i) ++ "," ++ string_of_nat (inductive_ind i).
 
 Definition projection : Set := inductive * nat (* params *) * nat (* argument *).
 
@@ -86,15 +107,20 @@ Inductive global_reference :=
 
 Definition string_of_gref gr : string :=
   match gr with
-  | ConstRef s => s
+  | ConstRef s => string_of_kername s
   | IndRef (mkInd s n) =>
-    "Inductive " ++ s ++ " " ++ (string_of_nat n)
+    "Inductive " ++ string_of_kername s ++ " " ++ (string_of_nat n)
   | ConstructRef (mkInd s n) k =>
-    "Constructor " ++ s ++ " " ++ (string_of_nat n) ++ " " ++ (string_of_nat k)
+    "Constructor " ++ string_of_kername s ++ " " ++ (string_of_nat n) ++ " " ++ (string_of_nat k)
   end.
 
-Definition gref_eq_dec
-: forall gr gr' : global_reference, {gr = gr'} + {~ gr = gr'}.
+Definition kername_eq_dec (k k0 : kername) : {k = k0} + {k <> k0}.
+Proof.
+  repeat (decide equality; eauto with eq_dec).
+Defined.
+Hint Resolve kername_eq_dec : eq_dec.
+
+Definition gref_eq_dec (gr gr' : global_reference) : {gr = gr'} + {~ gr = gr'}.
 Proof.
   decide equality; eauto with eq_dec.
   destruct i, i0.
@@ -117,10 +143,23 @@ Proof.
   intro Heq; specialize (H0 Heq). discriminate.
 Qed.
 
+(* todo : better ? *)
+Definition eq_kername (k k0 : kername) : bool :=
+  match kername_eq_dec k k0 with
+  | left _ => true
+  | right _ => false
+  end.
+
+Lemma eq_kername_refl kn : eq_kername kn kn.
+Proof.
+  unfold eq_kername. destruct (kername_eq_dec kn kn); cbnr.
+  contradiction.
+Qed.
+
 Definition eq_ind i i' :=
   let 'mkInd i n := i in
   let 'mkInd i' n' := i' in
-  eq_string i i' && Nat.eqb n n'.
+  eq_kername i i' && Nat.eqb n n'.
 
 Definition eq_constant := eq_string.
 
@@ -132,7 +171,7 @@ Definition eq_projection p p' :=
 Lemma eq_ind_refl i : eq_ind i i.
 Proof.
   destruct i as [mind k].
-  unfold eq_ind. now rewrite eq_string_refl, PeanoNat.Nat.eqb_refl.
+  unfold eq_ind. now rewrite eq_kername_refl, PeanoNat.Nat.eqb_refl.
 Qed.
 
 Lemma eq_projection_refl i : eq_projection i i.

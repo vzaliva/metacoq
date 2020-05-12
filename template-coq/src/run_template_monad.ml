@@ -31,9 +31,7 @@ let unquote_reduction_strategy env evm trm (* of type reductionStrategy *) : Red
     | name (* to unfold *) :: _ ->
        let name = reduce_all env evm name in
        let name = unquote_kn name in
-       (try Unfold [Locus.AllOccurrences, Tacred.evaluable_of_global_reference env (Nametab.locate name)]
-        with
-        | _ -> CErrors.user_err (str "Constant not found or not a constant: " ++ Libnames.pr_qualid name))
+       Unfold [Locus.AllOccurrences, Tacred.evaluable_of_global_reference env (GlobRef.ConstRef (Constant.make1 name))]
     | _ -> bad_term_verb trm "unquote_reduction_strategy"
   else not_supported_verb trm "unquote_reduction_strategy"
 
